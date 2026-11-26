@@ -24,7 +24,7 @@ namespace Mango.Web.Controllers
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
-           // ViewData["ReturnUrl"] = returnUrl;
+          ViewData["ReturnUrl"] = returnUrl;
             LoginRequestDto loginRequestDto = new();
             return View(loginRequestDto);
         }
@@ -32,7 +32,7 @@ namespace Mango.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginRequestDto obj, string? returnUrl = null)
         {
-            //ViewData["ReturnUrl"] = returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;
             ResponseDto? responseDto = await _authSerivce.LoginAsync(obj);
             if (responseDto != null && responseDto.IsSuccess)
             {
@@ -58,7 +58,7 @@ namespace Mango.Web.Controllers
         [HttpGet]
         public IActionResult Register(string? returnUrl = null)
         {
-            //ViewData["ReturnUrl"] = returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;
             RegisterationRequestDto registerationRequestDto = new();
             return View(registerationRequestDto);
         }
@@ -67,7 +67,7 @@ namespace Mango.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterationRequestDto obj, string? returnUrl = null)
         {
-           // ViewData["ReturnUrl"] = returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;
             ResponseDto? responseDto = await _authSerivce.RegisterAsync(obj);
             if (responseDto != null && responseDto.IsSuccess)
             {

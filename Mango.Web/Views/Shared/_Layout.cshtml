@@ -45,14 +45,21 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#" class="dropdown-item">
-                                        <i class="bi bi-egg-fried text-warning"></i>Dishes
+                                    <a asp-controller="Product" asp-action="ProductIndex" class="dropdown-item">
+                                        <i class="bi bi-egg-fried text-warning"></i>Products(Dishes)
                                     </a>
                                 </li>
                             </ul>
                         </li>
                     </ul>
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-2">
+
+                        <li class="nav-item">
+                            <a asp-controller="Cart" asp-action="CartIndex" class="cart-nav-btn">
+                                <i class="bi bi-bag"></i>
+                                <span class="d-none d-sm-inline" style="font-size:.85rem; font-weight:500;">Cart</span>
+                            </a>
+                        </li>
                     @if(User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">

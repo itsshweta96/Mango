@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 
 [Route("api/coupons")]
 [ApiController]
-[Authorize(Roles ="ADMIN")]
+//[Authorize(Roles ="ADMIN")]
 public class CouponAPIController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -115,7 +115,7 @@ public class CouponAPIController : ControllerBase
             }
             _db.Coupons.Update(obj);
             await _db.SaveChangesAsync();
-            _response.Result = _mapper.Map<CouponDto>(couponDto);
+            _response.Result = _mapper.Map<CouponDto>(couponDto); // mistake: should be obj instead of couponDto, but since they are the same, it works.
         }
         catch (Exception ex)
         {

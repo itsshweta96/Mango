@@ -24,6 +24,7 @@ namespace Mango.Web.Service
                 HttpClient client = _httpClientFactory.CreateClient("MangoAPI");
                 HttpRequestMessage message = new(); //message sending to the API from web application.
                 message.Headers.Add("Accept", "application/json"); // response in JSON format.
+                message.RequestUri = new Uri(requestDto.Url!);
 
                 //token 
 
@@ -36,12 +37,25 @@ namespace Mango.Web.Service
                     }
                 }
 
-                // message.RequestUri = new Uri(requestDto.Url);
-                message.RequestUri = new Uri(requestDto.Url!);
-                if (requestDto.Data != null) //need to serialize the data to JSON format for POST and PUT requests and send it in the request body
+
+                if (requestDto.ContentType == SD.ContentType.MultipartFormData)
+                {
+                    if (requestDto.Data != null)
+                    {
+                        message.Content = BuildMultiPartContent(requestDto.Data);
+                    }
+                }
+                else if (requestDto.Data != null)
                 {
                     message.Content = new StringContent(JsonSerializer.Serialize(requestDto.Data), Encoding.UTF8, "application/json");
                 }
+
+                // message.RequestUri = new Uri(requestDto.Url);
+                
+                //if (requestDto.Data != null) //need to serialize the data to JSON format for POST and PUT requests and send it in the request body
+                //{
+                //    message.Content = new StringContent(JsonSerializer.Serialize(requestDto.Data), Encoding.UTF8, "application/json");
+                //}
 
                 message.Method = requestDto.ApiType switch
                 {
@@ -86,6 +100,29 @@ namespace Mango.Web.Service
                 };
                 return dto;
             }
+        }
+
+        private static MultipartFormDataContent BuildMultiPartContent(object data) // to convert regular data into multipart form data
+        {
+            var form = new MultipartFormDataContent();
+            foreach (var property in data.GetType().GetProperties())
+            {
+                var value = property.GetValue(data);
+                if (value != null)
+                {
+                    if (value is IFormFile file)
+                    {
+                        var fileContent = new StreamContent(file.OpenReadStream());
+                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                        form.Add(fileContent, property.Name, file.FileName);
+                    }
+                    else
+                    {
+                        form.Add(new StringContent(value.ToString() ?? string.Empty), property.Name);
+                    }
+                }
+            }
+            return form;
         }
     }
 }

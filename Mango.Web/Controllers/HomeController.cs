@@ -1,5 +1,7 @@
 using Mango.Web.Models;
+using Mango.Web.Service;
 using Mango.Web.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -8,28 +10,98 @@ namespace Mango.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ICouponService _couponService;
-        public HomeController(ICouponService couponService)
+        // private readonly ICouponService _couponService;
+        private readonly IProductService _productService;
+
+        private readonly ICartService _cartService;
+        public HomeController(IProductService productService, ICartService cartService)
         {
-            _couponService = couponService;
+            _productService = productService;
+            _cartService = cartService;
         }
-
-
-
 
         public async Task<IActionResult> Index()
         {
-            ResponseDto? responseDto = await _couponService.GetAllCouponsAsync();
-            if(responseDto != null && responseDto.IsSuccess)
+            ResponseDto? responseDto = await _productService.GetAllProductsAsync();
+            if (responseDto != null && responseDto.IsSuccess)
             {
-                List<CouponDto>? coupons = JsonConvert.DeserializeObject<List<CouponDto>>(Convert.ToString(responseDto.Result));
-                return View(coupons);
+                List<ProductDto>? products = JsonConvert.DeserializeObject<List<ProductDto>>(Convert.ToString(responseDto.Result));
+                return View(products);
             }
-            return View();
+            return View(new List<ProductDto>());
         }
 
+        public async Task<IActionResult> Details(int productId)
+        {
+            ResponseDto? responseDto = await _productService.GetProductByIdAsync(productId);
+            if (responseDto != null && responseDto.IsSuccess)
+            {
+                // Handle the successful response
+                ProductDto? product = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(responseDto.Result));
+                return View(product);
+            }
+            return View(new ProductDto());
+        }
 
+        [HttpPost]
+        [Authorize]
 
+        public async Task<IActionResult> Details(ProductDto productDto)
+        {
+            CartDto cartDto = new CartDto
+            {
+                CartHeader = new CartHeaderDto
+                {
+                    UserId = User.Claims.Where(u => u.Type == "sub").FirstOrDefault()?.Value
+                }
+            };
+
+            CartDetailsDto cartDetailsDto = new CartDetailsDto
+            {
+                Count = productDto.Count,
+                ProductId = productDto.ProductId
+            };
+
+            cartDto.CartDetails = new List<CartDetailsDto> { cartDetailsDto };
+
+            ResponseDto? responseDto = await _cartService.UpsertCartAsync(cartDto);
+            if (responseDto != null && responseDto.IsSuccess)
+            {
+                // Handle the successful response
+                TempData["success"] = "Item has been added to the Shopping Cart";
+                return RedirectToAction("Index");
+            }
+            return View(productDto);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddToCart([FromBody] int productId)
+        {
+            CartDto cartDto = new CartDto
+            {
+                CartHeader = new CartHeaderDto
+                {
+                    UserId = User.Claims.Where(u => u.Type == "sub").FirstOrDefault()?.Value
+                }
+            };
+
+            CartDetailsDto cartDetailsDto = new CartDetailsDto
+            {
+                Count = 1,
+                ProductId = productId
+            };
+
+            cartDto.CartDetails = new List<CartDetailsDto> { cartDetailsDto };
+
+            ResponseDto? responseDto = await _cartService.UpsertCartAsync(cartDto);
+            if (responseDto != null && responseDto.IsSuccess)
+            {
+                // Handle the successful response
+                return Json(new { success = true, message = "Item added to cart!" });
+            }
+            return Json(new { success = false, message = responseDto.ErrorMessage ?? "Could not add item to cart" });
+        }
 
         public IActionResult Privacy()
         {
@@ -41,5 +113,18 @@ namespace Mango.Web.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+
+
+        //public async Task<IActionResult> Index()
+        //{
+        //    ResponseDto? responseDto = await _couponService.GetAllCouponsAsync();
+        //    if(responseDto != null && responseDto.IsSuccess)
+        //    {
+        //        List<CouponDto>? coupons = JsonConvert.DeserializeObject<List<CouponDto>>(Convert.ToString(responseDto.Result));
+        //        return View(coupons);
+        //    }
+        //    return View();
+        //}
     }
 }
